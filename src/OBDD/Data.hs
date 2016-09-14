@@ -296,7 +296,7 @@ toDot (OBDD idmap _ _ top _) =
                           _ -> idmap IM.! i
         in id &&& getNode
 
-    mkLabel lbl = "[label=\"" ++ lbl ++ "\"];"
+    mkLabel lbl = "[label=" ++ lbl ++ "];"
 
     helper (thisId, Leaf b) = return $
         -- switch to rectangle nodes for the leaf, before going back to ovals.

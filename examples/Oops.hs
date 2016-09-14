@@ -3,22 +3,86 @@ module Main where
 import OBDD
 import OBDD.Data
 import OBDD.Operation
+import Control.Lens
+import System.Process
+import Graphics.Rendering.Chart
+import Graphics.Rendering.Chart.Backend.Cairo
+import Data.Default.Class
+import Data.Colour
+import Data.Colour.Names
 
-import Prelude hiding ( (&&) )
+import Prelude hiding ( (&&), (||), not )
 
-manual = make $ do
-    fls <- checked_register $ Leaf False
-    tru <- checked_register $ Leaf True
-    b1  <- checked_register $ Branch 'b' fls tru
-    checked_register $ Branch 'a' fls b1
+xor x y = (x || y) && (not (x && y))
 
-constructed = (unit 'a' True) && (unit 'b' True)
+a :: OBDD String
+a = (unit "S" True)
 
-ok = manual && manual
-oops = constructed && manual
+b :: OBDD String
+b = (unit "M1" True)
 
-main = do
-    writeFile "ok.dot" $ toDot ok
-    writeFile "oops.dot" $ toDot oops
+c :: OBDD String
+c = (unit "M2" True) 
+
+constructed = a  && b `xor` c
+
+-- Decide how to evaluate leafs and how to combine them at each node
+annote diag p =
+  let lfv   True  = 1.0
+      lfv   False = 0.0
+      brnch node p0 p1 = p node * p1 + (1 - p node) * p0
+  in
+      fold lfv brnch diag
+
+
+pj r "S"  = r
+pj _ "M1" = 0.5
+pj _ "M2" = 0.5
+
+annote' exp x = annote exp (pj x)
+
+annoteRange exp = map (\v -> (v * 0.1, annote' exp (v * 0.1))) [0 .. 10]
+
+exps = [
+  a  && b `xor` a && c
+  ]
+
+plotData = map annoteRange exps
+
+_plot :: LineStyle -> [ (Double, Double)] -> PlotLines Double Double
+_plot style dta = plot_lines_style .~ style
+  $ plot_lines_values .~ [ dta ]
+  $ def
+
+plotProb name dta = do {
+  _ <- renderableToFile options name chart;
+  return ()
+  } where
+    h = head dta
+    tl = tail dta
+    actualSensitiveLine = solidLine lineWidth $ opaque black
+    otherLine = solidLine lineWidth $ opaque gray
+
+    layout :: Layout Double Double
+    layout = layout_title .~ "P(V=1) varying P(S=1)"
+      $ layout_plots .~ toPlot (_plot actualSensitiveLine h) : plotTail
+      $ def
+
+    plotTail = map (toPlot . _plot actualSensitiveLine) tl
+
+    chart :: Renderable ()
+    chart = toRenderable layout
+
+    options = FileOptions (800, 600) PDF
+
+    lineWidth = 0.25
+
+plotExp exp = do
+    writeFile "bdd.dot" $ toDot exp;
+    system "rm -f bdd.pdf";
+    system "dot -Tpdf bdd.dot -o bdd.pdf";
+    plotProb "prob.pdf" [ (annoteRange exp)];
+    system "pdftk bdd.pdf prob.pdf cat output final.pdf"
+
 
     
