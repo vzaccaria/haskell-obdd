@@ -278,7 +278,7 @@ checked_register n = case n of
     _ -> register n
 
 
--- | toDot outputs a string in format suitable for input to the "dot" program
+  -- | toDot outputs a string in format suitable for input to the "dot" program
 -- from the graphviz suite.
 toDot :: (Show v) => OBDD v -> String
 toDot (OBDD idmap _ _ top _) =
