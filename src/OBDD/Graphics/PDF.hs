@@ -16,15 +16,17 @@ import System.Directory
 
 import Prelude hiding ( (&&), (||), not )
 
-
-plotExp :: (Show a) => String -> OBDD a -> IO ()
-plotExp name exp = do
+plotDot :: String -> String -> IO ()
+plotDot name exp = do
     system "rm -rf .bdd";
     createDirectory ".bdd";
-    writeFile ".bdd/bdd.dot" $ toDot exp;
+    writeFile ".bdd/bdd.dot" $ exp;
     system ("dot -Tpdf .bdd/bdd.dot -o .bdd/prefinal.pdf");
     system ("pdfcrop .bdd/prefinal.pdf " ++ name);
     return ();
+
+plotExp :: (Show a) => String -> OBDD a -> IO ()
+plotExp name exp = plotDot name $ toDot exp
 
 plotExp' :: OBDD String -> IO ()
 plotExp' = plotExp "final.pdf"

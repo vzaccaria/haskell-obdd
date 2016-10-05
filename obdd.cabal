@@ -32,6 +32,8 @@ Library
                        , process >= 1.2.3.0
                        , random
                        , interpolate
+                       , QuickCheck >= 2.8
+
     Hs-Source-Dirs:	     src
     Exposed-Modules:     OBDD OBDD.Data OBDD.Make OBDD.Operation OBDD.Property
     Other-Modules:	     OBDD.IntIntMap, OBDD.VarIntIntMap

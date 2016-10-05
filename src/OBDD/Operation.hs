@@ -26,6 +26,9 @@ import qualified Data.Set as S
 import Prelude hiding ( (&&), (||), and, or, not )
 import qualified Prelude
 
+infixr 9 &&
+infixr 4 ||
+
 ( && ) :: Ord v => OBDD v -> OBDD v -> OBDD v
 ( && ) = binary ( Prelude.&& )
 
