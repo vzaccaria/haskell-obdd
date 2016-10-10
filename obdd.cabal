@@ -33,6 +33,9 @@ Library
                        , random
                        , interpolate
                        , QuickCheck >= 2.8
+                       , tasty >= 0.11
+                       , tasty-quickcheck >= 0.8
+
 
     Hs-Source-Dirs:	     src
     Exposed-Modules:     OBDD OBDD.Data OBDD.Make OBDD.Operation OBDD.Property
