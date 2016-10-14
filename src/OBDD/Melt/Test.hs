@@ -25,49 +25,48 @@ cl "1" = "v1"
 
 -- Expressions to test
 
-test1mop = asMop $ (v1 O.|| v2)
-test1bool b1 b2 _ _ = (b1 || b2)
+type Test = (OBDD Integer, Bool -> Bool -> Bool -> Bool -> Bool)
 
-test2mop = asMop (v1 O.|| v2 O.&& (M.xor v3 v4))
-test2bool b1 b2 b3 b4 = (b1 || b2 && (xor b3 b4))
+testtable :: [Test]
+testtable = [
+  (v1 O.|| v2,                    \b1 b2 b3 b4 -> (b1 || b2)), 
+  (v1 O.&& v2,                    \b1 b2 b3 b4 -> (b1 && b2)), 
+  (O.not v1,                      \b1 _ _ _ -> not b1),        
+  (M.xor v3 v4,                   \_ _ b3 b4 -> (xor b3 b4)),  
+  (v1 O.|| v2 O.&& (M.xor v3 v4), \b1 b2 b3 b4 -> (b1 || b2 && (xor b3 b4)))
+  ]
 
-test3mop = test2mop `M.diamond` test1mop
-test3bool b1 b2 b3 b4 = [ test2bool b1 b2 b3 b4, test1bool b1 b2 b3 b4]
+testtable1 = [ [p1] | p1 <- testtable ]
+testtable2 = [ [p1, p2] | p1 <- testtable, p2 <- testtable ]
+testtable3 = [ [p1, p2, p3] | p1 <- testtable, p2 <- testtable, p3 <- testtable ]
+
 
 -- Properties to validate with `quickCheck prop`
 --
 
-test1 :: Bool -> Bool -> Bool
-test1 b1 b2 = evalMop test1mop var == [test1bool b1 b2 False False] where
+test3 tsts b1 b2 b3 b4 = res where
+  res = evalMop prod var == map (ev . snd) tsts
+  prod = foldl1 M.diamond (map (asMop . fst) tsts)
+  ev  f = f b1 b2 b3 b4
   var 1 = b1
   var 2 = b2
+  var 3 = b3
+  var 4 = b4
 
 x `xor` y = (x || y) && (not (x && y))
 
-test2 :: Bool -> Bool -> Bool -> Bool -> Bool
-test2 b1 b2 b3 b4 = evalMop test2mop var == [test2bool b1 b2 b3 b4] where
-  var 1 = b1
-  var 2 = b2
-  var 3 = b3
-  var 4 = b4
 
 
-test3 b1 b2 b3 b4 = evalMop test3mop var == test3bool b1 b2 b3 b4 where
-  var 1 = b1
-  var 2 = b2
-  var 3 = b3
-  var 4 = b4
+testGroup1 = testGroup "1-output BDD vs actual TT" $ map (QC.testProperty "*") tests
+  where tests = map test3 testtable1 
 
+testGroup2 = testGroup "2-output BDD vs actual 2-TT" $ map (QC.testProperty "*") tests
+  where tests = map test3 testtable2
 
-testGroup1 = testGroup "1-output BDD vs actual TT" [
-                                                  QC.testProperty "a or b" test1,
-                                                  QC.testProperty "a or b and (c xor d)" test2
-                                                  ]
+testGroup3 = testGroup "3-output BDD vs actual 3-TT" $ map (QC.testProperty "*") tests
+  where tests = map test3 testtable3
 
-testGroup2 = testGroup "2-output BDD vs actual 2-TT" [
-                                                  QC.testProperty "[a or b, a or b and (c xor d)]" test3
-                                                  ]
-
-tests = testGroup "Tests" [testGroup1, testGroup2]
+tests = testGroup "Tests" [testGroup1, testGroup2, testGroup3]
+-- tests = testGroup "Tests" [testGroup1]
 
 test = defaultMain tests
