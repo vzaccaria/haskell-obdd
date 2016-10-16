@@ -1,5 +1,5 @@
 
-module OBDD.Melt.Test where
+module Main where
 
 import OBDD (unit)
 import qualified OBDD.Melt.Operator as M
@@ -79,4 +79,4 @@ testGroup3 = testGroup "3-output BDD vs actual 3-TT" $ map (QC.testProperty "*")
 tests = testGroup "Tests" [testGroup1, testGroup2, testGroup3]
 -- tests = testGroup "Tests" [testGroup1]
 
-test = defaultMain tests
+main = defaultMain tests
