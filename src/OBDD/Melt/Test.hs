@@ -3,7 +3,7 @@ module OBDD.Melt.Test where
 
 import OBDD (unit)
 import qualified OBDD.Melt.Operator as M
-import OBDD.Melt.Operator (plotFinal, plotDotWithLabels, evalMop, asMop)
+import OBDD.Melt.Operator (plotDotWithLabels, evalMop, asMop, (<>))
 import OBDD.Data
 import qualified OBDD.Operation as O
 import Test.QuickCheck
@@ -29,10 +29,14 @@ type Test = (OBDD Integer, Bool -> Bool -> Bool -> Bool -> Bool)
 
 testtable :: [Test]
 testtable = [
-  (v1 O.|| v2,                    \b1 b2 b3 b4 -> (b1 || b2)), 
-  (v1 O.&& v2,                    \b1 b2 b3 b4 -> (b1 && b2)), 
-  (O.not v1,                      \b1 _ _ _ -> not b1),        
-  (M.xor v3 v4,                   \_ _ b3 b4 -> (xor b3 b4)),  
+  (v1 O.|| v2,                    \b1 b2 b3 b4 -> (b1 || b2)),             
+  (v1 O.&& v2,                    \b1 b2 b3 b4 -> (b1 && b2)),             
+  ((v1 O.&& v2) `M.xor` v3,       \b1 b2 b3 b4 -> ((b1 && b2) `xor` b3)),    
+  (v1 `M.xor` v2 `M.xor` v3,      \b1 b2 b3 b4 -> (b1 `xor` b2 `xor` b3)), 
+  (O.not v1,                      \b1 _ _ _ -> not b1),                    
+  (M.xor v3 v4,                   \_ _ b3 b4 -> (xor b3 b4)),              
+  (M.xor v1 v3,                   \b1 _ b3 b4 -> (xor b1 b3)),             
+  (M.xor v3 v1,                   \b1 _ b3 b4 -> (xor b3 b1)),             
   (v1 O.|| v2 O.&& (M.xor v3 v4), \b1 b2 b3 b4 -> (b1 || b2 && (xor b3 b4)))
   ]
 
@@ -40,6 +44,12 @@ testtable1 = [ [p1] | p1 <- testtable ]
 testtable2 = [ [p1, p2] | p1 <- testtable, p2 <- testtable ]
 testtable3 = [ [p1, p2, p3] | p1 <- testtable, p2 <- testtable, p3 <- testtable ]
 
+-- problematic case
+--
+pc1 = asMop $ fst $ testtable !! 3
+pc2 = asMop $ fst $ testtable !! 4
+pc12 = pc1 <> pc2
+-- plotDotWithLabels pc12 cl
 
 -- Properties to validate with `quickCheck prop`
 --

@@ -9,6 +9,7 @@ module OBDD.Melt.Operator where
 import qualified Data.Map                as Map
 import           Data.String.Interpolate
 import           Data.Tree
+import Data.List
 import           OBDD
 import           OBDD.Data
 import           OBDD.Graphics.PDF
@@ -73,6 +74,7 @@ convert n' t =
                           (N (v,kf,kt))
       in (Map.union qq $ Map.union ff tt,t)
 
+
 getBoolKeys :: Mop -> [MopKey]
 getBoolKeys (m,_) = map fst $ filter f (Map.toList m)
   where f (k,F _) = True
@@ -133,7 +135,7 @@ asNode _ (K key,label,True) =
 collectEdges :: Mop -> [(MopKey,MopKey,Bool)]
 collectEdges (m,r)
   | (Just (N (n,k1,k2))) <- Map.lookup r m =
-    [(r,k1,False),(r,k2,True)] ++ collectEdges (m,k1) ++ collectEdges (m,k2)
+    nub $ [(r,k1,False),(r,k2,True)] ++ collectEdges (m,k1) ++ collectEdges (m,k2)
 collectEdges _ = []
 
 asEdge :: (MopKey,MopKey,Bool) -> String
@@ -152,9 +154,6 @@ wrapDot s =
   }
 |]
 
--- diamond':: Mop -> (MopKey, MopKey) -> Mop
--- diamond' (m,r) (k1,k2)
---    | (Just (F x),Just (F y)) <- (Map.lookup k1 m, Map.lookup k2 m) =
 combine :: Integer -> Mop -> Mop -> Mop
 combine vv (llm, llr) (rrm, rrr) = let
         ada'       = N (vv, llr, rrr)
@@ -163,7 +162,7 @@ combine vv (llm, llr) (rrm, rrr) = let
         mp2        = Map.singleton kada' ada'
         mp12       = Map.union mp1 mp2
         in (mp12, kada')
-    
+
 diamond :: Mop -> Mop -> Mop
 diamond aa@(m, or) aa'@(m', or') | (Just (N (v, l, r)), Just (N (v', l', r'))) <- (Map.lookup or m, Map.lookup or' m') =
                                 case compare v v' of
@@ -196,12 +195,9 @@ diamond aa@(m, or) aa'@(m', or') | (Just (F l), Just (F l')) <- (Map.lookup or m
                                     in (Map.singleton key root, key)
 
 diamond _ _ = error "Unknown error computing meld"
---   | v == v'                       = N (v, diamond l l', diamond r r')
---   | v > v'                        = N (v, diamond l a', diamond r a')
---   | v < v'                        = N (v', diamond a l', diamond a r)
--- diamond a@(N (v, l, r)) a'    = N (v, diamond l a', diamond r a')
--- diamond a a'@(N (v', l', r')) = N (v', diamond a l', diamond a r')
--- diamond (F l) (F l')          = F ( l ++ l' )
+
+infixl 4 <>
+(<>) = diamond
 
 
 
@@ -212,28 +208,8 @@ mopAsDot (m,r) names = wrapDot (n ++ e)
                      (collectNodesLabel (m,r)))
         e = (concatMap asEdge (collectEdges (m,r)))
 
-m = asMop (s1 `xor` m1)
-
-x = mopAsDot m convLabel'
-
 plotDotWithLabels
   :: Mop -> (String -> String) -> IO ()
 plotDotWithLabels m convLabel = plotDot "final.pdf" (mopAsDot m convLabel)
 
-plotFinal :: Mop -> IO ()
-plotFinal m = plotDotWithLabels m convLabel'
 
--- -- For use in documents you have 4 variables with the following labels
-s1 = (unit 4 True)
-
-m1 = (unit 3 True)
-
-m2 = (unit 2 True)
-
-m3 = (unit 1 True)
-
-convLabel' :: String -> String
-convLabel' "4" = "S1"
-convLabel' "3" = "M1"
-convLabel' "2" = "M2"
-convLabel' "1" = "M3"
