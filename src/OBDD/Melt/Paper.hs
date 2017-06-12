@@ -36,8 +36,7 @@ plotFinal m = plotDotWithLabels m convLabel'
 p = plotFinal
 plot = plotFinal
 
--- plotDotWithLabels pc12 cl
-
--- Properties to validate with `quickCheck prop`
---
+-- Problematic case presenting duplications:
+---
+-- p v2
 

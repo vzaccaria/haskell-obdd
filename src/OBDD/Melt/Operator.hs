@@ -25,7 +25,7 @@ data MopKey =
 data MopValue
   = N (Integer,MopKey,MopKey)
   | F [Bool]
-  deriving (Show,Eq)
+  deriving (Show)
 
 type Mop = (Map.Map MopKey MopValue,MopKey)
 
